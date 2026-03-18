@@ -1,0 +1,56 @@
+name: Build PZ SteamCMD Image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/pz-steamcmd
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:debian
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+```
+
+- **Commit changes** → main
+
+**5. Wait for the build**
+- Go to the **Actions** tab in your repo
+- You should see a workflow running — it was triggered by the commit
+- Wait for it to go green (takes ~5-10 minutes)
+
+**6. Make the package public**
+- Go to your GitHub profile → **Packages** tab
+- Find `pz-steamcmd`
+- Click it → **Package settings** (right side)
+- Scroll down to **Danger Zone** → **Change visibility** → **Public**
+
+**7. Update Pterodactyl**
+- In **Admin Panel → Nests → your PZ egg → Docker Images**, replace `ghcr.io/parkervcp/steamcmd:debian` with:
+```
+  ghcr.io/YOUR_GITHUB_USERNAME/pz-steamcmd:debian
