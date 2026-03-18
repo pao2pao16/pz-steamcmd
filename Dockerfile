@@ -50,6 +50,30 @@ RUN cd /tmp/ \
     && mv rcon-0.10.3-amd64_linux/rcon /usr/local/bin/ \
     && rm -rf /tmp/*
 
-RUN if [ "$(uname -m)" = "x86_64" ]; then \
-        wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.0g-2ubuntu4_amd64.deb && \
-        dpkg -i libssl1.1_1.1.0g-2ubuntu4_amd
+RUN curl -sSL https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /usr/share/keyrings/adoptium.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main" \
+       > /etc/apt/sources.list.d/adoptium.list \
+    && apt update \
+    && apt install -y temurin-17-jre \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_17_HOME=/usr/lib/jvm/temurin-17-jre-amd64
+
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+RUN useradd -m -d /home/container -s /bin/bash container
+USER container
+ENV USER=container HOME=/home/container
+WORKDIR /home/container
+
+STOPSIGNAL SIGINT
+
+COPY --chown=container:container entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/usr/bin/tini", "-g", "--"]
+CMD ["/entrypoint.sh"]
