@@ -1,8 +1,44 @@
 #!/bin/bash
 
+# Default timezone to UTC
+TZ=${TZ:-UTC}
+export TZ
+
+# Set internal Docker IP
+INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
+export INTERNAL_IP
+
+cd /home/container || exit 1
+
 mkdir -p "${HOME}/.cache/mods"
 mkdir -p "${HOME}/.cache/Server"
 mkdir -p "${HOME}/.cache/db"
+
+# Auto-update server via SteamCMD on boot
+if [ -z "${AUTO_UPDATE}" ] || [ "${AUTO_UPDATE}" == "1" ]; then
+    if [ ! -z "${SRCDS_APPID}" ]; then
+        echo "Checking for game server updates..."
+
+        if [ "${STEAM_USER}" == "" ]; then
+            echo "Steam user is not set. Defaulting to anonymous user."
+            STEAM_USER=anonymous
+            STEAM_PASS=""
+            STEAM_AUTH=""
+        fi
+
+        ./steamcmd/steamcmd.sh +force_install_dir /home/container \
+            +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} \
+            +app_update 1007 \
+            +app_update ${SRCDS_APPID} \
+            $( [[ -z ${SRCDS_BETAID} ]] || printf %s "-beta ${SRCDS_BETAID}" ) \
+            $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s "-betapassword ${SRCDS_BETAPASS}" ) \
+            ${INSTALL_FLAGS} validate +quit
+    else
+        echo "No App ID set. Skipping update check."
+    fi
+else
+    echo "Skipping game server update check. Auto Update is disabled."
+fi
 
 # Ensure a working JRE is available at jre64/
 # B41: bundled jre64 directory (Java 17) — works as-is
