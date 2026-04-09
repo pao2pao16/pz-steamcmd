@@ -2,7 +2,7 @@ name: Build PZ SteamCMD Image
 
 on:
   push:
-    branches: [main]
+    branches: [main, java25]
   workflow_dispatch:
 
 env:
@@ -26,9 +26,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set tags
+        id: tags
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "tags=ghcr.io/pao2pao16/pz-steamcmd:debian,ghcr.io/pao2pao16/pz-steamcmd:latest" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "java25" ]; then
+            echo "tags=ghcr.io/pao2pao16/pz-steamcmd:java25" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/pao2pao16/pz-steamcmd:debian,ghcr.io/pao2pao16/pz-steamcmd:latest
+          tags: ${{ steps.tags.outputs.tags }}

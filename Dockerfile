@@ -54,11 +54,11 @@ RUN curl -sSL https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg
     && echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main" \
        > /etc/apt/sources.list.d/adoptium.list \
     && apt update \
-    && apt install -y temurin-17-jre \
+    && apt install -y temurin-25-jre \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_17_HOME=/usr/lib/jvm/temurin-17-jre-amd64
+ENV JAVA_HOME=/usr/lib/jvm/temurin-25-jre-amd64
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8
